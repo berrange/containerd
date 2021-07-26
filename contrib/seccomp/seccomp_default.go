@@ -526,6 +526,7 @@ func DefaultProfile(sp *specs.Spec) *specs.LinuxSeccomp {
 				Names: []string{
 					"bpf",
 					"clone",
+					"clone3",
 					"fanotify_init",
 					"fsconfig",
 					"fsmount",
@@ -657,6 +658,19 @@ func DefaultProfile(sp *specs.Spec) *specs.LinuxSeccomp {
 				},
 			})
 		}
+
+		// Can't filter based on flags as we do with "clone", since
+		// with "clone3" they're hidden inside a struct. If we just
+		// ensure ENOSYS errno though, glibc will transparently
+		// fallback to using "clone" which is good enough as a default.
+		enosys := uint(unix.ENOSYS)
+		s.Syscalls = append(s.Syscalls, specs.LinuxSyscall{
+			Names: []string{
+				"clone3",
+			},
+			Action:   specs.ActErrno,
+			ErrnoRet: &enosys,
+		})
 	}
 
 	return s
